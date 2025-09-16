@@ -1,0 +1,56 @@
+/* Custom styles for Ilumina PWA */
+
+.view {
+    transition: opacity 0.3s ease-in-out;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Ticket card styles */
+.ticket-card {
+    @apply bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow;
+}
+
+.ticket-priority-high {
+    @apply border-l-4 border-red-500;
+}
+
+.ticket-priority-medium {
+    @apply border-l-4 border-yellow-500;
+}
+
+.ticket-priority-low {
+    @apply border-l-4 border-green-500;
+}
+
+/* Loading states */
+.loading {
+    @apply animate-pulse;
+}
+
+/* Map container */
+#map {
+    min-height: 400px;
+}
+
+/* Form validation */
+.error {
+    @apply border-red-500 bg-red-50;
+}
+
+.success {
+    @apply border-green-500 bg-green-50;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        @apply px-2;
+    }
+    
+    #kanban .grid-cols-3 {
+        @apply grid-cols-1 gap-2;
+    }
+}
