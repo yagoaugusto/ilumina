@@ -54,53 +54,103 @@ ilumina/
 └── composer.json       # Dependências PHP
 ```
 
-## 🔧 Instalação
+## 🔧 Instalação Rápida
 
-### Pré-requisitos
-- PHP 7.4.33+
-- MySQL 8.0+
+### Setup Automático (Recomendado) 🚀
+
+```bash
+# Clone o repositório
+git clone https://github.com/yagoaugusto/ilumina.git
+cd ilumina
+
+# Execute o setup automático
+./setup.sh
+```
+
+O script irá:
+- ✅ Verificar PHP e Composer
+- ✅ Instalar dependências automaticamente
+- ✅ Configurar ambiente (.env)
+- ✅ Verificar banco de dados
+- ✅ Iniciar o servidor
+
+### Setup com Docker 🐳
+
+Para uma instalação ainda mais simples:
+
+```bash
+# Clone o repositório
+git clone https://github.com/yagoaugusto/ilumina.git
+cd ilumina
+
+# Inicie com Docker Compose
+docker-compose up -d
+
+# Acesse: http://localhost:8000
+```
+
+### Setup Manual (se preferir)
+
+<details>
+<summary>👈 Clique para ver instruções manuais</summary>
+
+#### Pré-requisitos
+- PHP 7.4+ (recomendado 8.0+)
+- MySQL 8.0+ (opcional)
 - Composer
-- Servidor web (Apache/Nginx) ou PHP built-in server
 
-### Passo a passo
+#### Passo a passo
 
-1. **Clone o repositório**
+1. **Clone e instale**
 ```bash
 git clone https://github.com/yagoaugusto/ilumina.git
 cd ilumina
+composer install --no-dev
 ```
 
-2. **Instale as dependências PHP**
-```bash
-composer install
-```
-
-3. **Configure o ambiente**
+2. **Configure ambiente**
 ```bash
 cp .env.example .env
+# Edite .env se necessário
 ```
-Edite o arquivo `.env` com suas configurações de banco de dados.
 
-4. **Configure o banco de dados**
+3. **Banco de dados (opcional)**
 ```bash
-# Crie o banco de dados MySQL
 mysql -u root -p -e "CREATE DATABASE ilumina CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-
-# Execute o schema
 mysql -u root -p ilumina < database/schema.sql
 ```
 
-5. **Inicie o servidor**
+4. **Inicie o servidor**
 ```bash
-composer serve
-# ou
 php -S localhost:8000 -t public
 ```
 
-6. **Acesse a aplicação**
-- API: http://localhost:8000
-- Frontend: http://localhost:8000/../frontend/index.html
-- Health Check: http://localhost:8000/health
+</details>
+
+### 📱 Acesso à Aplicação
+
+Após o setup:
+- **Frontend PWA**: http://localhost:8000
+- **API Health**: http://localhost:8000/health
+- **API Endpoints**: http://localhost:8000/api/v1/*
+
+### ⚡ Inicialização Rápida
+
+Depois da primeira instalação, para iniciar rapidamente:
+
+```bash
+# Método 1: Script de setup
+./setup.sh --start
+
+# Método 2: Composer
+composer serve
+
+# Método 3: PHP direto
+php -S localhost:8000 -t public
+
+# Método 4: Docker
+docker-compose up -d
+```
 
 ## 📡 API Endpoints
 
