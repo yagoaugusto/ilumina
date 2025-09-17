@@ -6,6 +6,10 @@ use Slim\App;
 
 // API v1 group
 $app->group('/api/v1', function ($group) {
+    // Authentication endpoints
+    $group->post('/auth/request-link', '\App\Controllers\AuthController:requestLink');
+    $group->post('/auth/confirm', '\App\Controllers\AuthController:confirm');
+    
     // Tickets endpoints
     $group->get('/tickets', '\App\Controllers\TicketController:index');
     $group->post('/tickets', '\App\Controllers\TicketController:store');

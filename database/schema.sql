@@ -17,12 +17,12 @@ CREATE TABLE teams (
 -- Users table
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'manager', 'technician') DEFAULT 'technician',
+    name VARCHAR(255),
+    email VARCHAR(255) UNIQUE,
+    password VARCHAR(255),
+    phone VARCHAR(20) UNIQUE NOT NULL,
+    role ENUM('admin', 'manager', 'technician', 'citizen') DEFAULT 'citizen',
     team_id INT,
-    phone VARCHAR(20),
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -64,13 +64,27 @@ CREATE TABLE ticket_comments (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- Auth tokens table for phone verification
+CREATE TABLE auth_tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    phone VARCHAR(20) NOT NULL,
+    token VARCHAR(6) NOT NULL,
+    role ENUM('citizen', 'manager') NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_phone_token (phone, token),
+    INDEX idx_expires_at (expires_at)
+);
+
 -- Insert default data
 INSERT INTO teams (name, description) VALUES 
 ('Equipe Norte', 'Responsável pela região norte da cidade'),
 ('Equipe Sul', 'Responsável pela região sul da cidade'),
 ('Equipe Centro', 'Responsável pela região central da cidade');
 
-INSERT INTO users (name, email, password, role, team_id) VALUES 
-('Admin Sistema', 'admin@ilumina.local', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 1),
-('Gestor Norte', 'gestor.norte@ilumina.local', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'manager', 1),
-('Técnico João', 'joao@ilumina.local', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'technician', 1);
+INSERT INTO users (name, email, password, phone, role, team_id) VALUES 
+('Admin Sistema', 'admin@ilumina.local', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '+5511999999999', 'admin', 1),
+('Gestor Norte', 'gestor.norte@ilumina.local', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '+5511888888888', 'manager', 1),
+('Técnico João', 'joao@ilumina.local', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '+5511777777777', 'technician', 1);

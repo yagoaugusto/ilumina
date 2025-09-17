@@ -5,16 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ilumina - Gestão de Iluminação Pública</title>
     
-    <!-- PWA Meta Tags -->
+    <!-- Meta Tags -->
     <meta name="description" content="Sistema PWA para gestão da iluminação pública">
     <meta name="theme-color" content="#2563eb">
     <link rel="manifest" href="manifest.json">
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/app.css">
@@ -37,8 +31,97 @@
 
     <!-- Main Content -->
     <main class="container mx-auto p-4">
+        <!-- Login Views -->
+        <!-- Citizen Login View -->
+        <div id="citizen-login-view" class="view hidden">
+            <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold mb-6 text-center">🏠 Login Cidadão</h2>
+                <p class="text-gray-600 mb-6 text-center">Digite seu WhatsApp para receber o código de acesso</p>
+                
+                <form id="citizen-login-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">📱 Número do WhatsApp</label>
+                        <input type="tel" id="citizen-phone" name="phone" required 
+                               placeholder="(11) 99999-9999"
+                               class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button type="submit" id="citizen-send-code-btn"
+                            class="w-full bg-blue-500 hover:bg-blue-700 text-white py-3 px-4 rounded-md font-medium">
+                        📨 Enviar Código
+                    </button>
+                </form>
+
+                <!-- Code verification form (hidden initially) -->
+                <form id="citizen-verify-form" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">🔐 Código de Verificação</label>
+                        <input type="text" id="citizen-code" name="code" required maxlength="6"
+                               placeholder="123456"
+                               class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-center text-2xl">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">👤 Seu Nome (opcional)</label>
+                        <input type="text" id="citizen-name" name="name"
+                               placeholder="João Silva"
+                               class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button type="submit" id="citizen-verify-btn"
+                            class="w-full bg-green-500 hover:bg-green-700 text-white py-3 px-4 rounded-md font-medium">
+                        ✅ Verificar e Entrar
+                    </button>
+                    <button type="button" id="citizen-back-btn"
+                            class="w-full bg-gray-500 hover:bg-gray-700 text-white py-2 px-4 rounded-md">
+                        ← Voltar
+                    </button>
+                </form>
+
+                <div id="citizen-login-status" class="mt-4 text-center"></div>
+            </div>
+        </div>
+
+        <!-- Manager Login View -->
+        <div id="manager-login-view" class="view hidden">
+            <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold mb-6 text-center">🛠️ Login Gestor</h2>
+                <p class="text-gray-600 mb-6 text-center">Digite seu WhatsApp cadastrado para receber o código de acesso</p>
+                
+                <form id="manager-login-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">📱 Número do WhatsApp</label>
+                        <input type="tel" id="manager-phone" name="phone" required 
+                               placeholder="(11) 99999-9999"
+                               class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <button type="submit" id="manager-send-code-btn"
+                            class="w-full bg-green-500 hover:bg-green-700 text-white py-3 px-4 rounded-md font-medium">
+                        📨 Enviar Código
+                    </button>
+                </form>
+
+                <!-- Code verification form (hidden initially) -->
+                <form id="manager-verify-form" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">🔐 Código de Verificação</label>
+                        <input type="text" id="manager-code" name="code" required maxlength="6"
+                               placeholder="123456"
+                               class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 text-center text-2xl">
+                    </div>
+                    <button type="submit" id="manager-verify-btn"
+                            class="w-full bg-green-500 hover:bg-green-700 text-white py-3 px-4 rounded-md font-medium">
+                        ✅ Verificar e Entrar
+                    </button>
+                    <button type="button" id="manager-back-btn"
+                            class="w-full bg-gray-500 hover:bg-gray-700 text-white py-2 px-4 rounded-md">
+                        ← Voltar
+                    </button>
+                </form>
+
+                <div id="manager-login-status" class="mt-4 text-center"></div>
+            </div>
+        </div>
+
         <!-- Citizen View -->
-        <div id="citizen-view" class="view">
+        <div id="citizen-view" class="view hidden">
             <div class="bg-white rounded-lg shadow-md p-6 mb-6">
                 <h2 class="text-2xl font-bold mb-4">Relatar Problema de Iluminação</h2>
                 <form id="ticket-form" class="space-y-4">
@@ -62,7 +145,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
-                            <input type="tel" id="citizen-phone" name="citizen_phone" required
+                            <input type="tel" id="ticket-citizen-phone" name="citizen_phone" required
                                    class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
@@ -176,9 +259,6 @@
         </div>
     </main>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
     <!-- Custom JS -->
     <script src="assets/js/app.js"></script>
 </body>
