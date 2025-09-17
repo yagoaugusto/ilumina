@@ -12,7 +12,7 @@ class Database
 
         $capsule->addConnection([
             'driver' => 'mysql',
-            'host' => $_ENV['DB_HOST'] ?? '127.0.0.1',
+            'host' => $_ENV['DB_HOST'] ?? 'localhost',
             'port' => $_ENV['DB_PORT'] ?? '3306',
             'database' => $_ENV['DB_DATABASE'] ?? 'ilumina',
             'username' => $_ENV['DB_USERNAME'] ?? 'root',

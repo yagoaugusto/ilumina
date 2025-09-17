@@ -141,7 +141,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 // Load environment variables
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
-$dotenv->load();
+$dotenv->safeLoad();
 
 // Initialize database
 App\Config\Database::init();
@@ -153,17 +153,36 @@ $container = new Container();
 AppFactory::setContainer($container);
 $app = AppFactory::create();
 
-// Add error middleware
-$app->addErrorMiddleware(true, true, true);
+// Detect and set base path when app is served from a subdirectory (e.g., /ILUMINA/public)
+$scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+$detectedBasePath = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
+if ($detectedBasePath && $detectedBasePath !== '/') {
+    $app->setBasePath($detectedBasePath);
+}
+
+// Slim 4 requires the routing middleware
+$app->addRoutingMiddleware();
 
 // Add CORS middleware
 $app->add(function ($request, $handler) {
+    // Handle preflight requests
+    if (strtoupper($request->getMethod()) === 'OPTIONS') {
+        $response = new \Slim\Psr7\Response(204);
+        return $response
+            ->withHeader('Access-Control-Allow-Origin', '*')
+            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    }
+
     $response = $handler->handle($request);
     return $response
         ->withHeader('Access-Control-Allow-Origin', '*')
         ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
         ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
 });
+
+// Add error middleware LAST to catch errors from previous middlewares/handlers
+$app->addErrorMiddleware(true, true, true);
 
 // Health check endpoint
 $app->get('/health', function (Request $request, Response $response, $args) {

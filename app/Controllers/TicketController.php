@@ -23,16 +23,34 @@ class TicketController
     public function store(Request $request, Response $response, $args)
     {
         $data = json_decode($request->getBody()->getContents(), true);
-        
-        $ticket = Ticket::create($data);
-        
-        $response->getBody()->write(json_encode([
-            'status' => 'success',
-            'data' => $ticket,
-            'message' => 'Ticket created successfully'
-        ]));
-        
-        return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
+        // Basic validation
+        if (empty($data['title']) || empty($data['description']) || empty($data['citizen_name']) || empty($data['citizen_phone'])) {
+            $response->getBody()->write(json_encode([
+                'status' => 'error',
+                'message' => 'Missing required fields',
+                'required' => ['title', 'description', 'citizen_name', 'citizen_phone']
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(422);
+        }
+
+        try {
+            $ticket = Ticket::create($data);
+            
+            $response->getBody()->write(json_encode([
+                'status' => 'success',
+                'data' => $ticket,
+                'message' => 'Ticket created successfully'
+            ]));
+            
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
+        } catch (\Throwable $e) {
+            $response->getBody()->write(json_encode([
+                'status' => 'error',
+                'message' => 'Database error when creating ticket',
+                'details' => $e->getMessage()
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
+        }
     }
     
     public function show(Request $request, Response $response, $args)

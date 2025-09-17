@@ -1,7 +1,12 @@
 // Ilumina PWA JavaScript Application
 class IluminaApp {
     constructor() {
-        this.apiBase = window.location.origin;
+        // Detect base path to support deployments under subdirectories (e.g., /ILUMINA/public)
+    const fullPath = window.location.pathname;
+    // Compute directory path (without filename), and remove trailing slash except for root
+    const dirPath = fullPath.endsWith('/') ? fullPath : fullPath.substring(0, fullPath.lastIndexOf('/') + 1);
+    this.basePath = dirPath === '/' ? '' : dirPath.replace(/\/$/, '');
+        this.apiBase = window.location.origin + this.basePath;
         this.currentLat = null;
         this.currentLng = null;
         this.map = null;
@@ -51,6 +56,9 @@ class IluminaApp {
     async checkAPIHealth() {
         try {
             const response = await fetch(`${this.apiBase}/health`);
+            if (!response.ok) {
+                throw new Error(`Health request failed with status ${response.status}`);
+            }
             const data = await response.json();
             
             if (data.status === 'ok') {
@@ -146,7 +154,9 @@ class IluminaApp {
                 },
                 body: JSON.stringify(ticketData)
             });
-            
+            if (!response.ok) {
+                throw new Error(`Ticket submit failed with status ${response.status}`);
+            }
             const result = await response.json();
             
             if (result.status === 'success') {
@@ -304,7 +314,9 @@ class IluminaApp {
     setupPWA() {
         // Register service worker
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
+            const swPath = `${this.basePath || ''}/sw.js`;
+            const scope = (this.basePath || '/') + '/';
+            navigator.serviceWorker.register(swPath, { scope: scope.replace(/\/\/$/, '/') })
                 .then(registration => {
                     console.log('SW registered:', registration);
                 })

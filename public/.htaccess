@@ -1,0 +1,18 @@
+# Enable URL rewriting
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Some environments need the base set; adjust to your subfolder if needed
+    RewriteBase /ILUMINA/public/
+
+    # Serve existing files and directories directly
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Otherwise, send everything to index.php
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Fallback if mod_rewrite is not available: deny directory listings
+Options -Indexes
