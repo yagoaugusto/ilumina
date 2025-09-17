@@ -11,6 +11,8 @@ class IluminaApp {
         this.currentLng = null;
         this.map = null;
         this.markers = [];
+        this.user = null;
+        this.accessToken = null;
         
         this.init();
     }
@@ -19,28 +21,70 @@ class IluminaApp {
         this.setupEventListeners();
         this.checkAPIHealth();
         this.setupPWA();
+        this.checkStoredAuth();
+        this.showView('citizen-login-view'); // Start with citizen login
     }
     
     setupEventListeners() {
         // Navigation buttons
         document.getElementById('btn-citizen').addEventListener('click', () => {
-            this.showView('citizen-view');
+            if (this.user && this.user.role === 'citizen') {
+                this.showView('citizen-view');
+            } else {
+                this.logout();
+                this.showView('citizen-login-view');
+            }
         });
         
         document.getElementById('btn-manager').addEventListener('click', () => {
-            this.showView('manager-view');
-            this.initManagerView();
+            if (this.user && ['manager', 'admin'].includes(this.user.role)) {
+                this.showView('manager-view');
+                this.initManagerView();
+            } else {
+                this.logout();
+                this.showView('manager-login-view');
+            }
+        });
+        
+        // Citizen login form
+        document.getElementById('citizen-login-form').addEventListener('submit', (e) => {
+            this.handleLoginSubmit(e, 'citizen');
+        });
+        
+        document.getElementById('citizen-verify-form').addEventListener('submit', (e) => {
+            this.handleVerifySubmit(e, 'citizen');
+        });
+        
+        document.getElementById('citizen-back-btn').addEventListener('click', () => {
+            this.resetLoginForm('citizen');
+        });
+        
+        // Manager login form
+        document.getElementById('manager-login-form').addEventListener('submit', (e) => {
+            this.handleLoginSubmit(e, 'manager');
+        });
+        
+        document.getElementById('manager-verify-form').addEventListener('submit', (e) => {
+            this.handleVerifySubmit(e, 'manager');
+        });
+        
+        document.getElementById('manager-back-btn').addEventListener('click', () => {
+            this.resetLoginForm('manager');
         });
         
         // Citizen form
-        document.getElementById('ticket-form').addEventListener('submit', (e) => {
-            this.handleTicketSubmit(e);
-        });
+        if (document.getElementById('ticket-form')) {
+            document.getElementById('ticket-form').addEventListener('submit', (e) => {
+                this.handleTicketSubmit(e);
+            });
+        }
         
         // Location button
-        document.getElementById('get-location').addEventListener('click', () => {
-            this.getCurrentLocation();
-        });
+        if (document.getElementById('get-location')) {
+            document.getElementById('get-location').addEventListener('click', () => {
+                this.getCurrentLocation();
+            });
+        }
     }
     
     showView(viewId) {
@@ -79,6 +123,204 @@ class IluminaApp {
                 </div>
             `;
         }
+    }
+    
+    checkStoredAuth() {
+        const token = localStorage.getItem('ilumina_access_token');
+        const user = localStorage.getItem('ilumina_user');
+        
+        if (token && user) {
+            try {
+                this.accessToken = token;
+                this.user = JSON.parse(user);
+                this.updateNavigation();
+                
+                // Redirect to appropriate view based on role
+                if (this.user.role === 'citizen') {
+                    this.showView('citizen-view');
+                } else if (['manager', 'admin'].includes(this.user.role)) {
+                    this.showView('manager-view');
+                    this.initManagerView();
+                }
+            } catch (e) {
+                console.error('Failed to parse stored user data:', e);
+                this.logout();
+            }
+        }
+    }
+    
+    updateNavigation() {
+        const citizenBtn = document.getElementById('btn-citizen');
+        const managerBtn = document.getElementById('btn-manager');
+        
+        if (this.user) {
+            citizenBtn.textContent = this.user.role === 'citizen' ? `👤 ${this.user.name || 'Cidadão'}` : 'Cidadão';
+            managerBtn.textContent = ['manager', 'admin'].includes(this.user.role) ? `🛠️ ${this.user.name || 'Gestor'}` : 'Gestor';
+        } else {
+            citizenBtn.textContent = 'Cidadão';
+            managerBtn.textContent = 'Gestor';
+        }
+    }
+    
+    async handleLoginSubmit(e, role) {
+        e.preventDefault();
+        
+        const phoneInput = document.getElementById(`${role}-phone`);
+        const phone = phoneInput.value.trim();
+        const submitBtn = document.getElementById(`${role}-send-code-btn`);
+        const statusDiv = document.getElementById(`${role}-login-status`);
+        
+        if (!phone) {
+            this.showStatus(statusDiv, 'Telefone é obrigatório', 'error');
+            return;
+        }
+        
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Enviando...';
+        this.showStatus(statusDiv, 'Enviando código...', 'info');
+        
+        try {
+            const response = await fetch(`${this.apiBase}/api/v1/auth/request-link`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    phone: phone,
+                    role: role
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                this.showStatus(statusDiv, 'Código enviado via WhatsApp!', 'success');
+                this.showVerifyForm(role, phone);
+            } else {
+                this.showStatus(statusDiv, data.message || 'Erro ao enviar código', 'error');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            this.showStatus(statusDiv, 'Erro de conexão', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '📨 Enviar Código';
+        }
+    }
+    
+    async handleVerifySubmit(e, role) {
+        e.preventDefault();
+        
+        const phoneInput = document.getElementById(`${role}-phone`);
+        const codeInput = document.getElementById(`${role}-code`);
+        const nameInput = document.getElementById(`${role}-name`);
+        const phone = phoneInput.value.trim();
+        const code = codeInput.value.trim();
+        const name = nameInput ? nameInput.value.trim() : null;
+        const submitBtn = document.getElementById(`${role}-verify-btn`);
+        const statusDiv = document.getElementById(`${role}-login-status`);
+        
+        if (!code || code.length !== 6) {
+            this.showStatus(statusDiv, 'Código deve ter 6 dígitos', 'error');
+            return;
+        }
+        
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Verificando...';
+        this.showStatus(statusDiv, 'Verificando código...', 'info');
+        
+        try {
+            const response = await fetch(`${this.apiBase}/api/v1/auth/confirm`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    phone: phone,
+                    token: code,
+                    name: name
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                this.accessToken = data.access_token;
+                this.user = data.user;
+                
+                // Store in localStorage
+                localStorage.setItem('ilumina_access_token', this.accessToken);
+                localStorage.setItem('ilumina_user', JSON.stringify(this.user));
+                
+                this.updateNavigation();
+                this.showStatus(statusDiv, 'Login realizado com sucesso!', 'success');
+                
+                // Redirect to appropriate view
+                setTimeout(() => {
+                    if (role === 'citizen') {
+                        this.showView('citizen-view');
+                    } else {
+                        this.showView('manager-view');
+                        this.initManagerView();
+                    }
+                }, 1000);
+            } else {
+                this.showStatus(statusDiv, data.message || 'Código inválido', 'error');
+            }
+        } catch (error) {
+            console.error('Verify error:', error);
+            this.showStatus(statusDiv, 'Erro de conexão', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '✅ Verificar e Entrar';
+        }
+    }
+    
+    showVerifyForm(role, phone) {
+        const loginForm = document.getElementById(`${role}-login-form`);
+        const verifyForm = document.getElementById(`${role}-verify-form`);
+        
+        loginForm.classList.add('hidden');
+        verifyForm.classList.remove('hidden');
+        
+        // Focus on code input
+        document.getElementById(`${role}-code`).focus();
+    }
+    
+    resetLoginForm(role) {
+        const loginForm = document.getElementById(`${role}-login-form`);
+        const verifyForm = document.getElementById(`${role}-verify-form`);
+        const statusDiv = document.getElementById(`${role}-login-status`);
+        
+        verifyForm.classList.add('hidden');
+        loginForm.classList.remove('hidden');
+        
+        // Clear forms
+        document.getElementById(`${role}-code`).value = '';
+        if (document.getElementById(`${role}-name`)) {
+            document.getElementById(`${role}-name`).value = '';
+        }
+        
+        statusDiv.innerHTML = '';
+    }
+    
+    showStatus(statusDiv, message, type) {
+        const colors = {
+            success: 'text-green-600',
+            error: 'text-red-600',
+            info: 'text-blue-600'
+        };
+        
+        statusDiv.innerHTML = `<div class="${colors[type] || 'text-gray-600'}">${message}</div>`;
+    }
+    
+    logout() {
+        this.accessToken = null;
+        this.user = null;
+        localStorage.removeItem('ilumina_access_token');
+        localStorage.removeItem('ilumina_user');
+        this.updateNavigation();
+        this.showView('citizen-login-view');
     }
     
     getCurrentLocation() {

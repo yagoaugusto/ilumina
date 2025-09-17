@@ -33,4 +33,19 @@ class User extends Model
     {
         return $this->belongsTo(Team::class);
     }
+
+    public static function findByPhone($phone)
+    {
+        return static::where('phone', $phone)->first();
+    }
+
+    public static function createCitizen($phone, $name = null)
+    {
+        return static::create([
+            'phone' => $phone,
+            'name' => $name,
+            'role' => 'citizen',
+            'is_active' => true
+        ]);
+    }
 }
