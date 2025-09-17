@@ -73,6 +73,7 @@ CREATE TABLE auth_tokens (
     expires_at TIMESTAMP NOT NULL,
     used_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_phone_token (phone, token),
     INDEX idx_expires_at (expires_at)
 );
